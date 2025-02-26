@@ -44,9 +44,26 @@ service = build('drive', 'v3', credentials=creds)
 files = service.files()
 
 def list_files(folderId: str) -> 'list[File]':
-    result = files.list(fields='nextPageToken, files(id, owners, name, mimeType)', pageSize=10, q=f"'{folderId}' in parents", orderBy='name').execute()
-    return [File.from_dict(f) for f in result['files']]
-
+    out = []
+    pageToken = None
+    while True:
+        query = {
+            'fields': 'nextPageToken, files(id, owners, name, mimeType)',
+            'pageSize': '10',
+            'q': f"'{folderId}' in parents",
+            'orderBy': 'name'
+        }
+        if pageToken is not None:
+            query['pageToken'] = pageToken
+        result = files.list(**query).execute()
+        out.extend(File.from_dict(f) for f in result['files'])
+        if 'nextPageToken' in result:
+            pageToken = result['nextPageToken']
+        else:
+            pageToken = None
+        if not pageToken:
+            break
+    return out
 def log_folder(folderId: str, writer: csv.DictWriter, path_prefix: str):
     print(path_prefix)
     for file in list_files(folderId):
