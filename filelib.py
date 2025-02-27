@@ -1,4 +1,8 @@
 from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from pathlib import Path
+
+FOLDER_TYPE = "application/vnd.google-apps.folder"
 
 class User:
     def __init__(self, name: str, email: str):
@@ -66,3 +70,44 @@ class FileOps:
             if not pageToken:
                 break
         return out
+
+    def mkdir(self, parentId: str, name: str) -> 'File':
+        response = self.files.create(body={
+            "name": name,
+            "parents": [parentId],
+            "mimeType": FOLDER_TYPE,
+        }, fields=File.FIELDS).execute()
+
+        return File.from_dict(response)
+
+    def getFile(self, fileId: str) -> 'File':
+        response = self.files.get(fileId=fileId, fields=File.FIELDS).execute()
+        return File.from_dict(response)
+
+    def move(self, file: File, newParentId: str) -> 'File':
+        response = self.files.update(
+            fileId=file.id,
+            addParents=newParentId,
+            removeParents=file.parentId,
+            fields=File.FIELDS
+        ).execute()
+        return File.from_dict(response)
+
+    def copy(self, file: File, newParentId: str) -> 'File':
+        response = self.files.copy(
+            fileId=file.id,
+            body={
+                'parents': [newParentId],
+                'name': file.name
+            }, fields=File.FIELDS
+        ).execute()
+        return File.from_dict(response)
+
+    def upload(self, parentId: str, upload: Path) -> 'File':
+        media = MediaFileUpload(str(upload), 'text/csv')
+        file = self.files.create(body={
+            'name': upload.name,
+            'parents': [parentId]
+        }, media_body=media, fields=File.FIELDS).execute()
+
+        return file
