@@ -16,33 +16,41 @@ class User:
         return f'User(name="{self.name}", email="{self.email}")'
 
 class File:
-    def __init__(self, id: str, name: str, mimeType: str, owner: User):
+    FIELDS = 'id, owners, name, mimeType, ownedByMe, parents'
+
+    def __init__(self, id: str, name: str, mimeType: str, owner: User, ownedByMe: bool, parentId: str):
         self.id = id
         self.name = name
         self.mimeType = mimeType
         self.owner = owner
+        self.ownedByMe = ownedByMe
+        self.parentId = parentId
 
     def __str__(self):
         return f'{self.name} ({self.mimeType})'
 
     def __repr__(self):
-        return f'File(id="{self.id}", name="{self.name}", mimeType="{self.mimeType}", owner={repr(self.owner)})'
+        return f'File(id="{self.id}", name="{self.name}", mimeType="{self.mimeType}", owner={repr(self.owner)}, ownedByMe={self.ownedByMe}, parentId={self.parentId})'
 
     @staticmethod
     def from_dict(data) -> 'File':
-        return File(data['id'], data['name'], data['mimeType'], User.from_dict(data['owners'][0]))
+        return File(data['id'], data['name'], data['mimeType'], User.from_dict(data['owners'][0]), data['ownedByMe'], data['parents'][0])
 
-class FileLister:
-    def __init__(self, creds):
-        self.service = build('drive', 'v3', credentials=creds)
+class FileOps:
+    def __init__(self, service):
+        self.service = service
         self.files = self.service.files()
 
-    def list_files(self, folderId: str) -> 'list[File]':
+    @staticmethod
+    def from_creds(creds):
+        return FileOps(build('drive', 'v3', credentials=creds))
+
+    def listFiles(self, folderId: str) -> 'list[File]':
         out = []
         pageToken = None
         while True:
             query = {
-                'fields': 'nextPageToken, files(id, owners, name, mimeType)',
+                'fields': f'nextPageToken, files({File.FIELDS})',
                 'pageSize': '10',
                 'q': f"'{folderId}' in parents",
                 'orderBy': 'name'

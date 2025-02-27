@@ -7,11 +7,11 @@ creds = get_creds()
 
 MOMENTUM_ROOT_FOLDER = '1jGY4sRF004Yu__BAOmk1by2Nt6MJ5zHB'
 
-lister = filelib.FileLister(creds)
+lister = filelib.FileLister.from_creds(creds)
 
 def log_folder(folderId: str, writer: csv.DictWriter, path_prefix: str):
     print(path_prefix)
-    for file in lister.list_files(folderId):
+    for file in lister.listFiles(folderId):
         path = path_prefix + '/' + file.name
 
         try:
