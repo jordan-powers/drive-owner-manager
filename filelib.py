@@ -95,7 +95,13 @@ class FileOps:
                 break
         return out
 
-    def mkdir(self, parentId: str, name: str) -> 'File':
+    def mkdir(self, parent: 'str|File', name: str) -> 'File':
+        if isinstance(parent, str):
+            parentId = parent
+        else:
+            assert isinstance(parent, File)
+            parentId = parent.id
+
         response = self.__execute_with_retry(self.files.create(body={
             "name": name,
             "parents": [parentId],
@@ -109,7 +115,13 @@ class FileOps:
         response = self.__execute_with_retry(self.files.get(fileId=fileId, fields=File.FIELDS))
         return File.from_dict(response)
 
-    def move(self, file: File, newParentId: str) -> 'File':
+    def move(self, file: File, newParent: 'str|File') -> 'File':
+        if isinstance(newParent, str):
+            newParentId = newParent
+        else:
+            assert isinstance(newParent, File)
+            newParentId = newParent.id
+
         response = self.__execute_with_retry(self.files.update(
             fileId=file.id,
             addParents=newParentId,
@@ -118,7 +130,15 @@ class FileOps:
         ))
         return File.from_dict(response)
 
-    def copy(self, file: File, newParentId: str) -> 'File':
+    def copy(self, file: File, newParent: 'str|File') -> 'File':
+        if isinstance(newParent, str):
+            newParentId = newParent
+        else:
+            assert isinstance(newParent, File)
+            newParentId = newParent.id
+
+        assert file.mimeType != FOLDER_TYPE
+
         response = self.__execute_with_retry(self.files.copy(
             fileId=file.id,
             body={
@@ -128,7 +148,13 @@ class FileOps:
         ))
         return File.from_dict(response)
 
-    def upload(self, parentId: str, upload: Path) -> 'File':
+    def upload(self, parent: 'str|File', upload: Path) -> 'File':
+        if isinstance(parent, str):
+            parentId = parent
+        else:
+            assert isinstance(parent, File)
+            parentId = parent.id
+
         media = MediaFileUpload(str(upload), 'text/csv')
         file = self.__execute_with_retry(self.files.create(body={
             'name': upload.name,
