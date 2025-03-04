@@ -1,6 +1,9 @@
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from pathlib import Path
+from googleapiclient.errors import HttpError
+from random import randint
+from time import sleep
 
 FOLDER_TYPE = "application/vnd.google-apps.folder"
 
@@ -49,7 +52,28 @@ class FileOps:
     def from_creds(creds):
         return FileOps(build('drive', 'v3', credentials=creds))
 
-    def listFiles(self, folderId: str) -> 'list[File]':
+    def __execute_with_retry(self, request, fails=6):
+        try:
+            response = request.execute()
+            if response is not None:
+                return response
+        except HttpError as err:
+            if fails < 0:
+                raise err
+            if err.reason != 'userRateLimitExceeded':
+                raise err
+        sleep_time = (2**(6-fails)) + (randint(0, 1000) / 1000)
+        print(f"! API error, retrying in {sleep_time:.02f} seconds")
+        sleep(sleep_time)
+        return self.__execute_with_retry(request, fails-1)
+
+    def listFiles(self, folder: 'str|File') -> 'list[File]':
+        if isinstance(folder, str):
+            folderId = folder
+        else:
+            assert isinstance(folder, File)
+            folderId = folder.id
+
         out = []
         pageToken = None
         while True:
@@ -61,7 +85,7 @@ class FileOps:
             }
             if pageToken is not None:
                 query['pageToken'] = pageToken
-            result = self.files.list(**query).execute()
+            result = self.__execute_with_retry(self.files.list(**query))
             out.extend(File.from_dict(f) for f in result['files'])
             if 'nextPageToken' in result:
                 pageToken = result['nextPageToken']
@@ -72,42 +96,43 @@ class FileOps:
         return out
 
     def mkdir(self, parentId: str, name: str) -> 'File':
-        response = self.files.create(body={
+        response = self.__execute_with_retry(self.files.create(body={
             "name": name,
             "parents": [parentId],
             "mimeType": FOLDER_TYPE,
-        }, fields=File.FIELDS).execute()
+        }, fields=File.FIELDS))
 
         return File.from_dict(response)
 
     def getFile(self, fileId: str) -> 'File':
-        response = self.files.get(fileId=fileId, fields=File.FIELDS).execute()
+        assert isinstance(fileId, str)
+        response = self.__execute_with_retry(self.files.get(fileId=fileId, fields=File.FIELDS))
         return File.from_dict(response)
 
     def move(self, file: File, newParentId: str) -> 'File':
-        response = self.files.update(
+        response = self.__execute_with_retry(self.files.update(
             fileId=file.id,
             addParents=newParentId,
             removeParents=file.parentId,
             fields=File.FIELDS
-        ).execute()
+        ))
         return File.from_dict(response)
 
     def copy(self, file: File, newParentId: str) -> 'File':
-        response = self.files.copy(
+        response = self.__execute_with_retry(self.files.copy(
             fileId=file.id,
             body={
                 'parents': [newParentId],
                 'name': file.name
             }, fields=File.FIELDS
-        ).execute()
+        ))
         return File.from_dict(response)
 
     def upload(self, parentId: str, upload: Path) -> 'File':
         media = MediaFileUpload(str(upload), 'text/csv')
-        file = self.files.create(body={
+        file = self.__execute_with_retry(self.files.create(body={
             'name': upload.name,
             'parents': [parentId]
-        }, media_body=media, fields=File.FIELDS).execute()
+        }, media_body=media, fields=File.FIELDS))
 
         return file
