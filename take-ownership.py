@@ -12,7 +12,7 @@ creds = get_creds()
 service = build('drive', 'v3', credentials=creds)
 fileops = filelib.FileOps(service)
 
-archive = fileops.mkdir(ARCHIVE_ROOT, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+archive = fileops.mkdir(ARCHIVE_ROOT, datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "-take-ownership")
 
 def log_op(writer: 'csv.DictWriter', op: str, oldfile: 'filelib.File|None', newfile: 'filelib.File'):
     writer.writerow({
