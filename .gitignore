@@ -4,3 +4,4 @@ token.json
 __pycache__/
 files.csv
 log.csv
+action_log.csv
