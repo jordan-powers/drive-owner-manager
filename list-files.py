@@ -7,7 +7,7 @@ creds = get_creds()
 
 MOMENTUM_ROOT_FOLDER = '1jGY4sRF004Yu__BAOmk1by2Nt6MJ5zHB'
 
-lister = filelib.FileLister.from_creds(creds)
+lister = filelib.FileOps.from_creds(creds)
 
 def log_folder(folderId: str, writer: csv.DictWriter, path_prefix: str):
     print(path_prefix)
