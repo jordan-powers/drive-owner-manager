@@ -5,7 +5,10 @@ import csv
 
 creds = get_creds()
 
-MOMENTUM_ROOT_FOLDER = '1jGY4sRF004Yu__BAOmk1by2Nt6MJ5zHB'
+ROOT_FOLDERS = [
+    ('1jGY4sRF004Yu__BAOmk1by2Nt6MJ5zHB', 'Team 4999'),
+    ('1xvTNdkxACOncaTtJZRQALwPmygVKFWT_', 'Team 4999 - Leadership')
+]
 
 lister = filelib.FileOps.from_creds(creds)
 
@@ -35,4 +38,5 @@ with outfile.open('w', newline='', encoding='utf8') as outf:
     writer = csv.DictWriter(outf, ['path', 'id', 'name', 'type', 'owner name', 'owner email'])
     writer.writeheader()
 
-    log_folder(MOMENTUM_ROOT_FOLDER, writer, 'Team 4999')
+    for folder_id, path_prefix in ROOT_FOLDERS:
+        log_folder(folder_id, writer, path_prefix)
