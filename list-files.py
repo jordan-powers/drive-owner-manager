@@ -23,6 +23,7 @@ def log_folder(folderId: str, writer: csv.DictWriter, path_prefix: str):
                 'id': file.id,
                 'name': file.name,
                 'type': file.mimeType,
+                'size': file.size,
                 'owner name': file.owner.name,
                 'owner email': file.owner.email
             })
@@ -35,7 +36,7 @@ def log_folder(folderId: str, writer: csv.DictWriter, path_prefix: str):
 
 outfile = Path.cwd() / 'files.csv'
 with outfile.open('w', newline='', encoding='utf8') as outf:
-    writer = csv.DictWriter(outf, ['path', 'id', 'name', 'type', 'owner name', 'owner email'])
+    writer = csv.DictWriter(outf, ['path', 'id', 'name', 'type', 'size', 'owner name', 'owner email'])
     writer.writeheader()
 
     for folder_id, path_prefix in ROOT_FOLDERS:

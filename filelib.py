@@ -23,25 +23,26 @@ class User:
         return f'User(name="{self.name}", email="{self.email}")'
 
 class File:
-    FIELDS = 'id, owners, name, mimeType, ownedByMe, parents'
+    FIELDS = 'id, owners, name, mimeType, ownedByMe, parents, quotaBytesUsed'
 
-    def __init__(self, id: str, name: str, mimeType: str, owner: User, ownedByMe: bool, parentId: str):
+    def __init__(self, id: str, name: str, mimeType: str, owner: User, ownedByMe: bool, parentId: str, size: str):
         self.id = id
         self.name = name
         self.mimeType = mimeType
         self.owner = owner
         self.ownedByMe = ownedByMe
         self.parentId = parentId
+        self.size = size
 
     def __str__(self):
         return f'{self.name} ({self.mimeType})'
 
     def __repr__(self):
-        return f'File(id="{self.id}", name="{self.name}", mimeType="{self.mimeType}", owner={repr(self.owner)}, ownedByMe={self.ownedByMe}, parentId={self.parentId})'
+        return f'File(id="{self.id}", name="{self.name}", mimeType="{self.mimeType}", owner={repr(self.owner)}, ownedByMe={self.ownedByMe}, parentId={self.parentId}, size={self.size})'
 
     @staticmethod
     def from_dict(data) -> 'File':
-        return File(data['id'], data['name'], data['mimeType'], User.from_dict(data['owners'][0]), data['ownedByMe'], data['parents'][0])
+        return File(data['id'], data['name'], data['mimeType'], User.from_dict(data['owners'][0]), data['ownedByMe'], data['parents'][0], data['quotaBytesUsed'])
 
 class FileOps:
     def __init__(self, service):
